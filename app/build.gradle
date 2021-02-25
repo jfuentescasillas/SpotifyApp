@@ -4,6 +4,9 @@ plugins {
     id 'kotlin-kapt'
 }
 
+def keysField = new Properties()
+keysField.load(new FileInputStream(rootProject.file("local.properties")))
+
 android {
     compileSdkVersion 30
     buildToolsVersion "30.0.3"
@@ -16,6 +19,9 @@ android {
         versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField "String", "PRIVATE_KEY", keysField['privateKey']
+        buildConfigField "String", "PUBLIC_KEY", keysField['publicKey']
     }
 
     buildTypes {
@@ -49,6 +55,9 @@ dependencies {
     testImplementation 'junit:junit:4.+'
     androidTestImplementation 'androidx.test.ext:junit:1.1.2'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
+    // ViewModel
+    implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:2.3.0"
+
 
     // Retrofit
     implementation 'com.squareup.retrofit2:retrofit:2.9.0'

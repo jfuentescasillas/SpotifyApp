@@ -1,30 +1,35 @@
 package com.example.tarea004_spotifyapp.data.network
 
 import com.example.tarea004_spotifyapp.BuildConfig
-import com.example.tarea004_spotifyapp.data.authentication.RenewAuthenticationToken
-import com.example.tarea004_spotifyapp.data.model.ResponseAllSongsDataModel
+import com.example.tarea004_spotifyapp.data.model.ResponseAuthenticationDataModel
+import okhttp3.Credentials
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
-class SongNetwork() {
-    lateinit var service: SongService
 
+class AuthenticationNetwork() {
+    lateinit var serviceAuthentication: AuthenticationService
 
-    private fun loadSongListRetrofit(authenticationToken: String) {
+    /**
+     * Load Retrofit
+     */
+    private fun loadRetrofit() {
         val retrofit = Retrofit.Builder()
-            .baseUrl("https://api.spotify.com")
+            .baseUrl("https://accounts.spotify.com")
             .addConverterFactory(GsonConverterFactory.create())
-            .client(createHttpClient(authenticationToken))
+            .client(createHttpClient())
             .build()
 
-        service = retrofit.create(SongService::class.java)
+        serviceAuthentication = retrofit.create(AuthenticationService::class.java)
     }
 
-
-    private fun createHttpClient(authenticationToken: String): OkHttpClient {
+    /**
+     * Create HTTP Client
+     */
+    private fun createHttpClient(): OkHttpClient {
         // Create OkHttpClient
         val builder = OkHttpClient.Builder()
             .connectTimeout(60L, TimeUnit.SECONDS)
@@ -39,25 +44,20 @@ class SongNetwork() {
         // App token
         builder.addInterceptor { chain ->
             val request = chain.request().newBuilder()
-                .addHeader("Authorization", "Bearer $authenticationToken")
+                .addHeader("Authorization", Credentials.basic(BuildConfig.PUBLIC_KEY, BuildConfig.PRIVATE_KEY))
                 .build()
             chain.proceed(request)
         }
 
-        builder.authenticator(RenewAuthenticationToken())
-            .connectTimeout(60L, TimeUnit.SECONDS)
-            .followRedirects(false)
-            .followSslRedirects(false)
-
         return builder.build()
     }
 
+    /**
+     * Get the Authentication Token
+     */
+    suspend fun getAuthenticationToken(): ResponseAuthenticationDataModel {
+        loadRetrofit()
 
-    suspend fun getPlayList(): ResponseAllSongsDataModel {
-        // Temporarily solution as seen on class the 24-02-2021
-        val authToken = AuthenticationNetwork().getAuthenticationToken().access_token
-        loadSongListRetrofit(authToken)
-
-        return service.getPlayList()
+        return serviceAuthentication.getAuthenticationToken("client_credentials")
     }
 }
